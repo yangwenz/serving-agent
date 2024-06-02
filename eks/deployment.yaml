@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: serving-agent
+  labels:
+    app: serving-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: serving-agent
+  template:
+    metadata:
+      labels:
+        app: serving-agent
+    spec:
+      containers:
+        - name: serving-agent-container
+          image: 982164572446.dkr.ecr.us-east-2.amazonaws.com/serving-agent
+          imagePullPolicy: Always
+          ports:
+            - name: service
+              containerPort: 8000
+          env:
+            - name: GIN_MODE
+              value: release
+            - name: KSERVE_ADDRESS
+              value: "istio-ingressgateway-internal.istio-system.svc.cluster.local"
+            - name: REDIS_ADDRESS
+              value: "redis-master:6379"
+            - name: WEBHOOK_SERVER_ADDRESS
+              value: "serving-webhook-service.default.svc.cluster.local:12000"
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 20

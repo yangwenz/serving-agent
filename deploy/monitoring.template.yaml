@@ -1,0 +1,12 @@
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: prom-agent-{{MODEL_NAME}}-{{PLATFORM}}
+spec:
+  selector:
+    matchLabels:
+      app: agent-{{MODEL_NAME}}-{{PLATFORM}}
+  endpoints:
+    - port: 8000
+      path: "/metrics"
+      interval: 30s

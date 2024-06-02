@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-{{MODEL_NAME}}-{{PLATFORM}}
+  labels:
+    app: agent-{{MODEL_NAME}}-{{PLATFORM}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent-{{MODEL_NAME}}-{{PLATFORM}}
+  template:
+    metadata:
+      labels:
+        app: agent-{{MODEL_NAME}}-{{PLATFORM}}
+        name: agent-{{MODEL_NAME}}
+    spec:
+      terminationGracePeriodSeconds: 360
+      containers:
+        - name: agent-container
+          image: "asia-southeast1-docker.pkg.dev/hybrid-autonomy-401202/ml-platform/serving-agent:{{IMAGE_VERSION}}"
+          imagePullPolicy: Always
+          ports:
+            - name: service
+              containerPort: 8000
+          resources:
+            requests:
+              cpu: 500m
+              memory: 500Mi
+            limits:
+              cpu: "4"
+              memory: "1Gi"
+          env:
+            - name: ENVIRONMENT
+              value: PRODUCTION
+            - name: GIN_MODE
+              value: release
+            - name: REDIS_ADDRESS
+              value: {{REDIS_ADDRESS}}
+            - name: USE_LOCAL_REDIS
+              value: {{USE_LOCAL_REDIS}}
+            - name: SHUTDOWN_DELAY
+              value: {{SHUTDOWN_DELAY}}
+            - name: WORKER_CONCURRENCY
+              value: {{WORKER_CONCURRENCY}}
+            - name: MAX_QUEUE_SIZE
+              value: {{MAX_QUEUE_SIZE}}
+            - name: TASK_TYPE_NAME
+              value: {{MODEL_NAME}}-{{PLATFORM}}
+            - name: WEBHOOK_SERVER_ADDRESS
+              value: {{WEBHOOK_SERVER_ADDRESS}}
+            - name: MODEL_NAME
+              value: {{MODEL_NAME}}
+            - name: ML_PLATFORM
+              value: {{PLATFORM}}
+            - name: KSERVE_ADDRESS
+              value: {{KSERVE_ADDRESS}}
+            - name: KSERVE_NAMESPACE
+              value: {{KSERVE_NAMESPACE}}
+            - name: UPLOAD_WEBHOOK_ADDRESS
+              value: {{UPLOAD_WEBHOOK_ADDRESS}}
+            - name: REPLICATE_APIKEY
+              value: {{REPLICATE_APIKEY}}
+            - name: REPLICATE_MODEL_ID
+              value: {{REPLICATE_MODEL_ID}}
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: 8000
+            initialDelaySeconds: 360
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 360
+            periodSeconds: 20
+        - name: redis-container
+          image: redis
+          resources:
+            requests:
+              cpu: 200m
+              memory: 200Mi
+            limits:
+              cpu: 500m
+              memory: "1Gi"
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            periodSeconds: 10
+            tcpSocket:
+              port: 6379
+          livenessProbe:
+            periodSeconds: 10
+            tcpSocket:
+              port: 6379
+          lifecycle:
+            preStop:
+              exec:
+                command: [ "sleep", "300" ]

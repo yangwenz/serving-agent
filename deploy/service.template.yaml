@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-service-{{MODEL_NAME}}
+spec:
+  selector:
+    name: agent-{{MODEL_NAME}}
+  ports:
+    - name: service
+      protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: ClusterIP
