@@ -37,7 +37,7 @@ This is the key component of our ML service. The system for model serving has tw
 The role of a serving agent is to offer sync/async prediction APIs, redirect the requests to the underlying
 ML platforms (either KServe or Replicate), and provide task queues for long-running predictions.
 The agent requires a Redis or Redis cluster for the task queue, and the serving webhook implemented in this
-[repo](https://github.com/HyperGAI/serving-webhook) for updating prediction status and results.
+[repo](https://github.com/yangwenz/serving-webhook) for updating prediction status and results.
 
 ### Sync API
 
