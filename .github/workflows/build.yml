@@ -1,0 +1,38 @@
+name: Create a new release tag
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+
+  create-tag:
+    name: Build docker image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Set github env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+      - name: Set gCloud auth
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+
+      - name: Install gCloud CLI
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GOOGLE_PROJECT }}
+
+      - name: Build, tag, and push image
+        env:
+          GOOGLE_PROJECT: ${{ secrets.GOOGLE_PROJECT }}
+          REPOSITORY: serving-agent
+        run: |
+          gcloud auth configure-docker asia-southeast1-docker.pkg.dev
+          docker build -t asia-southeast1-docker.pkg.dev/$GOOGLE_PROJECT/ml-platform/$REPOSITORY:$RELEASE_VERSION .
+          docker push asia-southeast1-docker.pkg.dev/$GOOGLE_PROJECT/ml-platform/$REPOSITORY:$RELEASE_VERSION
