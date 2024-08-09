@@ -51,6 +51,7 @@ func (server *Server) setupRouter() {
 	v1Routes := router.Group("/v1")
 	v1Routes.Use(prometheusMiddleware())
 	v1Routes.POST("/predict", server.predict)
+	v1Routes.POST("/generate", server.generate)
 	v1Routes.GET("/docs", server.docs)
 	v1Routes.GET("/queue_size", server.getQueueSize)
 

@@ -2,6 +2,7 @@ package platform
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -174,6 +175,17 @@ func (service *Replicate) Predict(request *InferRequest, version string) (*Infer
 		}
 	}
 	return nil, NewRequestError(InternalError, errors.New("predict timeout"))
+}
+
+func (service *Replicate) Generate(
+	request *InferRequest,
+	version string,
+	ctx context.Context,
+	encoder *json.Encoder,
+	flusher http.Flusher,
+) *RequestError {
+	return NewRequestError(UnknownAPIVersion,
+		errors.New("generation API for replicate is not supported"))
 }
 
 func (service *Replicate) Docs(request *DocsRequest) (interface{}, *RequestError) {

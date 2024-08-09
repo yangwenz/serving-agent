@@ -1,4 +1,4 @@
-export IMAGE_VERSION="v1.4.5"
+export IMAGE_VERSION="v1.4.6"
 export PLATFORM=kserve
 export MODEL_NAME=hyperbooth-prod-slow
 
@@ -10,9 +10,9 @@ export MAX_QUEUE_SIZE=50
 export WEBHOOK_SERVER_ADDRESS="serving-webhook-service.default.svc.cluster.local:12000"
 
 # For the PoC cluster
-export KSERVE_ADDRESS="103.179.204.64"
-export KSERVE_NAMESPACE="wzyang-restricted"
-export UPLOAD_WEBHOOK_ADDRESS="serving-webhook-service.wzyang-restricted.svc.cluster.local:12000"
+# export KSERVE_ADDRESS="103.179.204.64"
+# export KSERVE_NAMESPACE="wzyang-restricted"
+# export UPLOAD_WEBHOOK_ADDRESS="serving-webhook-service.wzyang-restricted.svc.cluster.local:12000"
 
 # For the GKE cluster
 # export KSERVE_ADDRESS="istio-ingressgateway-internal.istio-system.svc.cluster.local"
@@ -20,9 +20,9 @@ export UPLOAD_WEBHOOK_ADDRESS="serving-webhook-service.wzyang-restricted.svc.clu
 # export UPLOAD_WEBHOOK_ADDRESS="serving-webhook-service.default.svc.cluster.local:12000"
 
 # For the H100 cluster
-# export KSERVE_ADDRESS="210.87.104.32:8001"
-# export KSERVE_NAMESPACE="prod"
-# export UPLOAD_WEBHOOK_ADDRESS="serving-webhook-service.prod.svc.cluster.local:12000"
+export KSERVE_ADDRESS="210.87.104.32:8001"
+export KSERVE_NAMESPACE="prod"
+export UPLOAD_WEBHOOK_ADDRESS="serving-webhook-service.prod.svc.cluster.local:12000"
 
 export REPLICATE_APIKEY=""
 export REPLICATE_MODEL_ID=""

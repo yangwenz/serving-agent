@@ -5,6 +5,9 @@
 package mockplatform
 
 import (
+	context "context"
+	json "encoding/json"
+	http "net/http"
 	reflect "reflect"
 
 	platform "github.com/HyperGAI/serving-agent/platform"
@@ -47,6 +50,20 @@ func (m *MockPlatform) Docs(arg0 *platform.DocsRequest) (interface{}, *platform.
 func (mr *MockPlatformMockRecorder) Docs(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Docs", reflect.TypeOf((*MockPlatform)(nil).Docs), arg0)
+}
+
+// Generate mocks base method.
+func (m *MockPlatform) Generate(arg0 *platform.InferRequest, arg1 string, arg2 context.Context, arg3 *json.Encoder, arg4 http.Flusher) *platform.RequestError {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Generate", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(*platform.RequestError)
+	return ret0
+}
+
+// Generate indicates an expected call of Generate.
+func (mr *MockPlatformMockRecorder) Generate(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Generate", reflect.TypeOf((*MockPlatform)(nil).Generate), arg0, arg1, arg2, arg3, arg4)
 }
 
 // Predict mocks base method.

@@ -2,6 +2,7 @@ package platform
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -83,12 +84,84 @@ func (service *KServe) sendRequest(
 	return nil, NewRequestError(InternalError, fmt.Errorf("shouldn't be here"))
 }
 
+func (service *KServe) sendStreamingRequest(
+	ctx context.Context,
+	modelName string,
+	method string,
+	url string,
+	data []byte,
+	encoder *json.Encoder,
+	flusher http.Flusher,
+	timeout time.Duration,
+) *RequestError {
+	// TODO: Retires
+	req, err := http.NewRequest(method, url, bytes.NewReader(data))
+	if err != nil {
+		return NewRequestError(BuildRequestError,
+			errors.New("failed to build request"))
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Host = fmt.Sprintf("%s.%s.%s",
+		modelName, service.namespace, service.customDomain)
+
+	client := http.Client{Timeout: timeout}
+	res, err := client.Do(req)
+	if err != nil {
+		return NewRequestError(SendRequestError,
+			fmt.Errorf("model-name: %s, failed to send request: %v", modelName, err))
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return NewRequestError(InvalidInputError,
+			fmt.Errorf("model-name: %s, status-code: %d", modelName, res.StatusCode))
+	}
+	decoder := json.NewDecoder(res.Body)
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info().Msgf("client stopped listening")
+			return NewRequestError(SendRequestError,
+				fmt.Errorf("model-name: %s, client stopped listening", modelName))
+		default:
+			var m StreamingMessage
+			if err := decoder.Decode(&m); err != nil {
+				if err == io.EOF {
+					return nil
+				}
+				return NewRequestError(SendRequestError,
+					fmt.Errorf("model-name: %s, failed to decode request: %v", modelName, err))
+			}
+			if err := encoder.Encode(m); err != nil {
+				return NewRequestError(SendRequestError,
+					fmt.Errorf("model-name: %s, failed to encode request: %v", modelName, err))
+			}
+			flusher.Flush()
+		}
+	}
+}
+
 func (service *KServe) Predict(request *InferRequest, version string) (*InferResponse, *RequestError) {
 	if version == "v1" {
 		return service.predictV1(request)
 	}
 	return nil, NewRequestError(UnknownAPIVersion,
 		errors.New("prediction API version is not supported"))
+}
+
+func (service *KServe) Generate(
+	request *InferRequest,
+	version string,
+	ctx context.Context,
+	encoder *json.Encoder,
+	flusher http.Flusher,
+) *RequestError {
+	if version == "v1" {
+		return service.generateV1(request, ctx, encoder, flusher)
+	}
+	return NewRequestError(UnknownAPIVersion,
+		errors.New("generation API version is not supported"))
 }
 
 func (service *KServe) predictV1(request *InferRequest) (*InferResponse, *RequestError) {
@@ -126,6 +199,35 @@ func (service *KServe) predictV1(request *InferRequest) (*InferResponse, *Reques
 	}
 	response := InferResponse{Outputs: outputs}
 	return &response, nil
+}
+
+func (service *KServe) generateV1(
+	request *InferRequest,
+	ctx context.Context,
+	encoder *json.Encoder,
+	flusher http.Flusher,
+) *RequestError {
+	modelName := request.ModelName
+	inputs := request.Inputs
+
+	// Marshal the input data
+	data, err := json.Marshal(inputs)
+	if err != nil {
+		return NewRequestError(MarshalError,
+			errors.New("failed to marshal request"))
+	}
+	// Send a new prediction request
+	url := fmt.Sprintf("http://%s/v1/models/%s:generate", service.address, modelName)
+	return service.sendStreamingRequest(
+		ctx,
+		modelName,
+		"POST",
+		url,
+		data,
+		encoder,
+		flusher,
+		time.Duration(service.timeout)*time.Second,
+	)
 }
 
 func (service *KServe) Docs(request *DocsRequest) (interface{}, *RequestError) {

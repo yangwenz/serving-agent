@@ -24,12 +24,9 @@ spec:
             - name: service
               containerPort: 8000
           resources:
-            requests:
-              cpu: 500m
-              memory: 500Mi
             limits:
-              cpu: "4"
-              memory: "1Gi"
+              cpu: 100m
+              memory: 200Mi
           env:
             - name: ENVIRONMENT
               value: PRODUCTION
@@ -78,12 +75,9 @@ spec:
         - name: redis-container
           image: redis
           resources:
-            requests:
-              cpu: 200m
-              memory: 200Mi
             limits:
-              cpu: 500m
-              memory: "1Gi"
+              cpu: 100m
+              memory: 200Mi
           ports:
             - containerPort: 6379
           readinessProbe:

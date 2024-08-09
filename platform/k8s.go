@@ -2,6 +2,7 @@ package platform
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -67,6 +68,17 @@ func (service *K8sPlugin) Predict(request *InferRequest, version string) (*Infer
 	}
 	return nil, NewRequestError(UnknownAPIVersion,
 		errors.New("prediction API version is not supported"))
+}
+
+func (service *K8sPlugin) Generate(
+	request *InferRequest,
+	version string,
+	ctx context.Context,
+	encoder *json.Encoder,
+	flusher http.Flusher,
+) *RequestError {
+	return NewRequestError(UnknownAPIVersion,
+		errors.New("generation API for k8s is not supported"))
 }
 
 func (service *K8sPlugin) predictV1(request *InferRequest) (*InferResponse, *RequestError) {

@@ -2,6 +2,7 @@ package platform
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -166,6 +167,17 @@ func (service *RunPod) Predict(request *InferRequest, version string) (*InferRes
 		}
 	}
 	return nil, NewRequestError(InternalError, errors.New("predict timeout"))
+}
+
+func (service *RunPod) Generate(
+	request *InferRequest,
+	version string,
+	ctx context.Context,
+	encoder *json.Encoder,
+	flusher http.Flusher,
+) *RequestError {
+	return NewRequestError(UnknownAPIVersion,
+		errors.New("generation API for RunPod is not supported"))
 }
 
 func (service *RunPod) Docs(request *DocsRequest) (interface{}, *RequestError) {

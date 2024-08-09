@@ -158,6 +158,69 @@ func (server *Server) asyncPredict(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"id": output["id"]})
 }
 
+func (server *Server) generate(ctx *gin.Context) {
+	var req platform.InferRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	if server.config.MLPlatform == "kserve" ||
+		server.config.MLPlatform == "k8s" ||
+		server.config.MLPlatform == "k8s-plugin" {
+		// Append uploading webhook
+		uploadURL := fmt.Sprintf("http://%s/upload", server.config.UploadWebhookAddress)
+		req.Inputs["upload_webhook"] = uploadURL
+	}
+
+	// Add a prediction task record
+	userID := ctx.Request.Header.Get("UID")
+	id := uuid.New().String()
+	_, err := server.webhook.CreateNewTask(id, userID, req.ModelName, "running", 0)
+	if err != nil {
+		log.Error().Msgf("failed to create new task info: %v", err)
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+	info := platform.UpdateRequest{ID: id}
+
+	// Setup request headers for streaming
+	w, r := ctx.Writer, ctx.Request
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Transfer-Encoding", "chunked")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	encoder := json.NewEncoder(w)
+
+	startTime := time.Now()
+	e := server.platform.Generate(&req, "v1", r.Context(), encoder, flusher)
+	if e != nil {
+		log.Error().Msgf("failed to run prediction: %v", e)
+		info.Status = "failed"
+		info.ErrorInfo = e.Error()
+		if err := server.webhook.UpdateTaskInfo(&info); err != nil {
+			log.Error().Msgf("failed to update task info: %v", err)
+		}
+		server.convertErrorCode(e, ctx)
+		return
+	}
+	endTime := time.Now()
+	execution := endTime.Sub(startTime)
+
+	// Update task status
+	info.Status = "succeeded"
+	info.RunningTime = fmt.Sprintf("%f", execution.Seconds())
+	if err := server.webhook.UpdateTaskInfo(&info); err != nil {
+		log.Error().Msgf("failed to update task info: %v", err)
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+}
+
 func (server *Server) docs(ctx *gin.Context) {
 	var req platform.DocsRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {

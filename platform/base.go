@@ -1,6 +1,8 @@
 package platform
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
 	"time"
 )
@@ -30,6 +32,7 @@ type TaskInfo struct {
 
 type Platform interface {
 	Predict(request *InferRequest, version string) (*InferResponse, *RequestError)
+	Generate(request *InferRequest, version string, ctx context.Context, encoder *json.Encoder, flusher http.Flusher) *RequestError
 	Docs(request *DocsRequest) (interface{}, *RequestError)
 }
 
@@ -53,4 +56,9 @@ type Webhook interface {
 
 type Fetcher interface {
 	SendRequest(req *http.Request, timeout time.Duration, retries int) (*http.Response, error)
+}
+
+type StreamingMessage struct {
+	Id   int    `json:"id"`
+	Data string `json:"data"`
 }
