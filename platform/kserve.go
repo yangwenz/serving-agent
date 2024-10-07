@@ -14,6 +14,7 @@ import (
 )
 
 type KServe struct {
+	version      string
 	address      string
 	customDomain string
 	namespace    string
@@ -22,6 +23,7 @@ type KServe struct {
 
 func NewKServe(config utils.Config) Platform {
 	return &KServe{
+		version:      config.KServeVersion,
 		address:      config.KServeAddress,
 		customDomain: config.KServeCustomDomain,
 		namespace:    config.KServeNamespace,
@@ -217,7 +219,12 @@ func (service *KServe) generateV1(
 			errors.New("failed to marshal request"))
 	}
 	// Send a new prediction request
-	url := fmt.Sprintf("http://%s/v1/models/%s:generate", service.address, modelName)
+	var url string
+	if service.version <= "0.10.2" {
+		url = fmt.Sprintf("http://%s/v1/models/%s:generate", service.address, modelName)
+	} else {
+		url = fmt.Sprintf("http://%s/v1/models/%s:predict", service.address, modelName)
+	}
 	return service.sendStreamingRequest(
 		ctx,
 		modelName,

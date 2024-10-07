@@ -3,7 +3,7 @@ name: Create a new release tag
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - 'v*.*.*-gcp'
 
 jobs:
 

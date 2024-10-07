@@ -24,6 +24,7 @@ type Config struct {
 	UploadWebhookAddress string `mapstructure:"UPLOAD_WEBHOOK_ADDRESS"`
 	EnablePeriodicCheck  bool   `mapstructure:"ENABLE_PERIODIC_CHECK"`
 	// KServe
+	KServeVersion        string `mapstructure:"KSERVE_VERSION"`
 	KServeAddress        string `mapstructure:"KSERVE_ADDRESS"`
 	KServeCustomDomain   string `mapstructure:"KSERVE_CUSTOM_DOMAIN"`
 	KServeNamespace      string `mapstructure:"KSERVE_NAMESPACE"`
