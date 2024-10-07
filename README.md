@@ -131,6 +131,7 @@ The followings are the other parameters depending on which ML platform to use. F
 
 |       Parameter        |                Description                | Sample value |
 :----------------------:|:-----------------------------------------:|:------------:
+|     KSERVE_VERSION     |            The KServe version             |    0.10.2    |
 |     KSERVE_ADDRESS     |            The KServe address             | 0.0.0.0:8080 |
 |  KSERVE_CUSTOM_DOMAIN  |             The custom domain             | example.com  |
 |    KSERVE_NAMESPACE    | The namespace where the model is deployed |   default    |
@@ -153,10 +154,3 @@ For RunPod:
 |     RUNPOD_APIKEY      |          The RunPod API key          |          xxxxx           |
 |    RUNPOD_MODEL_ID     |             The model ID             |          xxxxx           |
 | RUNPOD_REQUEST_TIMEOUT | The timeout for a prediction request |           180            |
-
-For K8S deployment:
-
-|         Parameter         |             Description              | Sample value |
-:-------------------------:|:------------------------------------:|:------------:
-|     K8SPLUGIN_ADDRESS     |    The k8s serving plugin address    | 0.0.0.0:8002 |
-| K8SPLUGIN_REQUEST_TIMEOUT | The timeout for a prediction request |     180      |
