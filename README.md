@@ -32,53 +32,53 @@ make server
 This is the key component of our ML service. The system for model serving has two layers:
 
 1. The serving platform, e.g., KServe, Replicate, RunPod or Kubernetes deployment.
-2. The serving agent (this repo) on GKE or EKS.
+2. The serving agent (this repo) on Kubernetes, e.g., GKE and EKS.
 
-The role of a serving agent is to offer sync/async prediction APIs, redirect the requests to the underlying
-ML platforms (either KServe or Replicate), and provide task queues for long-running predictions.
-The agent requires a Redis or Redis cluster for the task queue, and the serving webhook implemented in this
+The serving agent offers sync and async prediction APIs, redirecting the requests to the underlying
+ML platforms (e.g., KServe, Replicate), and providing task queues for long-running predictions.
+The agent requires a Redis or Redis cluster for the task queue, and a webhook service implemented in this
 [repo](https://github.com/yangwenz/serving-webhook) for updating prediction status and results.
 
 ### Sync API
 
-The serving agent provides both Sync and Async APIs. For the Sync prediction API, when the agent receives
+The serving agent provides both sync and async APIs. For the sync prediction API, when the agent receives
 the request, it will do the followings:
 
 1. Check if the request format is valid.
-2. Create a new task record via the serving webhook.
+2. Create a new task record via the webhook service.
 3. Send the request to the underlying ML platform and wait for the prediction results.
-4. If the prediction succeeded, update the task record via the serving webhook, and return the results.
+4. If the prediction succeeded, update the task record via the webhook service, and return the results.
 5. If the prediction failed, update the task status to `failed`.
-6. If any webhook call failed, return the error.
+6. If any webhook call failed, return an error.
 
 ### Async API
 
-For the Async prediction API, we utilize the asynq lib. For the asynq client:
+For the async prediction API, we utilize the asynq lib. For the asynq client:
 
 1. Check if the request format is valid.
-2. Check if the task queue is full. If the queue is full, return the error.
-3. Create a new task record via the serving webhook.
+2. Check if the task queue is full. If the queue is full, return an error.
+3. Create a new task record via the webhook service.
 4. Submit the prediction task to the asynq task queue.
 5. Return the task ID if all these steps succeeded.
-6. If any step failed, it will update the task record status to `failed` and return the error.
+6. If any step failed, it will update the task record status to `failed` and return an error.
 
 For the asynq server:
 
-1. Pull a task from the task queue and send it to one available worker.
+1. Pull a task from the task queue and send it to an available worker.
 2. The worker verifies the payload format.
 3. The worker changes the task status to `running`.
 4. The worker sends the request to the underlying ML platform and waits for the prediction results.
-5. If the prediction succeeded, update the task record via the serving webhook.
+5. If the prediction succeeded, update the task record via the webhook service.
 6. If the prediction failed, update the task status to `failed`.
 7. If any webhook call failed, raise an error and retry the task in the future.
 
 ### Graceful Termination 
 
-The asynq queue can either use a redis in local memory or a redis cluster on GCP, which depends on
+The asynq queue can either use a redis in local memory or a redis cluster on Cloud, which depends on
 whether high availability is required. When an agent is terminated by k8s (either doing upgrading or rescheduling),
 we should shut down the agent service in different ways according to the redis type:
 
-1. If we use a redis cluster on GCP, we just need to call `Shutdown` of `RedisTaskProcessor`. This method
+1. If we use a redis cluster on Cloud, we just need to call `Shutdown` of `RedisTaskProcessor`. This method
    will wait for the active running task to be finished and shut down the asynq server. If the running task
    doesn't finish in `TASK_TIMEOUT` seconds, it will be put back to the queue.
 2. If we use a local redis, we call `ShutdownDistributor`.
@@ -94,7 +94,7 @@ If the agent or local redis fails, it is possible that some tasks remain "pendin
 This can happen when task creation succeeds but the other steps are not executed
 due to node failure or other unknown errors. This happens rarely, but it's still an issue needed to be
 resolved. To handle this issue, we do the following checks:
-1. The service will check if there exists archived tasks in the queue periodically (every 10mins). 
+1. The service will check if there exists archived tasks in the queue periodically (e.g., every 30mins). 
    If some tasks are archived, their status will be set to `failed`.
 2. Before starting the service, we will check if there are `pending` or `running` tasks recorded in the database
    by calling `InitCheck` in the `worker` package. This function will handle remaining `pending` or `running` tasks.
